@@ -1,0 +1,10 @@
+[package]
+name = "over-easy"
+version = "0.1.0"
+
+[[bin]]
+name = "over-easy"
+path = "src/main.rs"
+
+[dependencies]
+regex = "1"
