@@ -8,3 +8,4 @@ path = "src/main.rs"
 
 [dependencies]
 regex = "1"
+lazy_static = "1.4.0"
