@@ -1,5 +1,11 @@
 pub mod parse {
-  use regex::Regex;  
+  use regex::Regex;
+
+  lazy_static! {
+    static ref NUMBER: Regex = Regex::new(r"^\d+\b").unwrap();
+    static ref STRING: Regex = Regex::new(r"^'([^']*)'").unwrap();
+    static ref WORD: Regex = Regex::new("^[^\\s(),#\"]+").unwrap();
+  }
   
   #[derive(Debug)]
   pub enum ASTType {
@@ -35,19 +41,23 @@ pub mod parse {
     rest: Option<String>
   }
 
+  fn trim_whitespace(program: &str) -> &str {
+    return program.trim_start();
+  }
+
   fn parse_apply<'a>(expr: ASTExpression, program: &'a str) -> AST {
     if &program.chars().next().unwrap_or(Default::default()) != &'(' {
       return AST { expr, rest: Some(program.to_string()) };
     }
     let mut to_parse: String = program[1..].to_string();
     let mut args: Vec<ASTExpression> = Vec::new();
-    while &to_parse.chars().next().unwrap() != &')' {
+    while &to_parse.chars().next().unwrap_or(Default::default()) != &')' {
       let arg = parse_expression(&to_parse);
       args.push(arg.expr);
-      to_parse = arg.rest.unwrap().trim_start().to_string();
-      let next_char = &to_parse.chars().next().unwrap();
+      to_parse = trim_whitespace(&arg.rest.unwrap_or(Default::default())).to_string();
+      let next_char = &to_parse.chars().next().unwrap_or(Default::default());
       if next_char == &',' {
-        to_parse = to_parse[1..].trim_start().to_string();
+        to_parse = trim_whitespace(&to_parse[1..]).to_string();
       } else if next_char != &')' {      
         panic!("Expected ',' or ')', received {}", next_char);
       }
@@ -57,12 +67,7 @@ pub mod parse {
   }
 
   fn parse_expression<'a>(program: &'a str) -> AST {
-    lazy_static! {
-      static ref NUMBER: Regex = Regex::new(r"^\d+\b").unwrap();
-      static ref STRING: Regex = Regex::new(r"^'([^']*)'").unwrap();
-      static ref WORD: Regex = Regex::new("^[^\\s(),#\"]+").unwrap();
-    }
-    let to_parse = program.trim_start();
+    let to_parse = trim_whitespace(program);
     if NUMBER.is_match(to_parse) {
       let value = NUMBER.find(to_parse).unwrap().as_str();
       let int_value = i32::from_str_radix(value, 10).unwrap();
